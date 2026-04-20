@@ -57,7 +57,7 @@ watch(rawQuery, (value) => {
   window.clearTimeout(searchDebounce)
   searchDebounce = window.setTimeout(() => {
     query.value = value.trim().toLowerCase()
-  }, 120)
+  }, 140)
 })
 
 function onScroll() {
@@ -66,14 +66,13 @@ function onScroll() {
 
 function setView(next: 'grid' | 'list') {
   if (view.value === next) return
-
   isAnimatingView.value = true
   view.value = next
 
   window.clearTimeout(viewAnimationTimer)
   viewAnimationTimer = window.setTimeout(() => {
     isAnimatingView.value = false
-  }, 260)
+  }, 220)
 }
 
 function withSearchText(source: SourceItem): SourceItem {
@@ -83,21 +82,21 @@ function withSearchText(source: SourceItem): SourceItem {
   return {
     ...source,
     languageName,
-    searchText: source.searchText
-      ? source.searchText
-      : [
-          source.title,
-          source.key,
-          source.language,
-          languageName,
-          source.engine ?? '',
-          source.contentType ?? '',
-          source.path,
-          source.brokenReason ?? '',
-          ...(source.domains ?? []),
-        ]
-          .join(' ')
-          .toLowerCase(),
+    searchText:
+      source.searchText ||
+      [
+        source.title,
+        source.key,
+        source.language,
+        languageName,
+        source.engine ?? '',
+        source.contentType ?? '',
+        source.path,
+        source.brokenReason ?? '',
+        ...(source.domains ?? []),
+      ]
+        .join(' ')
+        .toLowerCase(),
   }
 }
 
@@ -123,7 +122,6 @@ const languages = computed(() => {
 
   for (const source of dataset.value.sources) {
     if (!source.language) continue
-
     values.set(
       source.language,
       source.languageName || LANGUAGE_NAMES[source.language] || source.language.toUpperCase(),
@@ -145,7 +143,6 @@ const contentTypes = computed(() => {
 
 const topLocales = computed(() => {
   const localeSummary = dataset.value.byLocale ?? {}
-
   return Object.entries(localeSummary)
     .sort((left, right) => right[1] - left[1])
     .slice(0, 8)
@@ -153,7 +150,6 @@ const topLocales = computed(() => {
 
 const topTypes = computed(() => {
   const typeSummary = dataset.value.byType ?? {}
-
   return Object.entries(typeSummary)
     .sort((left, right) => right[1] - left[1])
     .slice(0, 6)
@@ -180,16 +176,13 @@ const filteredSources = computed<SourceItem[]>(() => {
     switch (sort.value) {
       case 'title':
         return left.title.localeCompare(right.title)
-
       case 'language':
         return (
           (left.languageName || left.language).localeCompare(right.languageName || right.language) ||
           left.title.localeCompare(right.title)
         )
-
       case 'domains':
         return right.domains.length - left.domains.length || left.title.localeCompare(right.title)
-
       case 'status':
       default:
         return (
@@ -232,7 +225,7 @@ onMounted(async () => {
 
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}data/sources.json`, {
-      cache: 'no-store',
+      cache: 'force-cache',
     })
 
     if (!response.ok) {
@@ -240,12 +233,7 @@ onMounted(async () => {
     }
 
     const liveData = (await response.json()) as SourceDataset
-
-    if (liveData.sources.length > 0) {
-      dataset.value = normalizeDataset(liveData)
-    } else {
-      dataset.value = normalizeDataset(sampleData)
-    }
+    dataset.value = normalizeDataset(liveData.sources.length > 0 ? liveData : sampleData)
   } catch (reason) {
     dataset.value = normalizeDataset(sampleData)
     error.value = reason instanceof Error ? reason.message : 'Unknown data loading error'
@@ -267,7 +255,14 @@ onBeforeUnmount(() => {
 
     <header :class="['topbar', { 'topbar--compact': isScrolled }]" id="top">
       <div class="topbar__brand">
-        <div class="topbar__logo">📚</div>
+        <img
+          class="topbar__logo-image"
+          src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f4da.svg"
+          alt="Books emoji"
+          width="42"
+          height="42"
+          decoding="async"
+        />
 
         <div>
           <p class="topbar__eyebrow">Parser source catalog</p>
@@ -297,7 +292,6 @@ onBeforeUnmount(() => {
     <section class="hero card">
       <div class="hero__copy">
         <p class="hero__eyebrow">Parser / Source Catalog</p>
-
         <h1 class="hero__title">Browse source entries in a clean catalog</h1>
 
         <p class="hero__text">
@@ -312,7 +306,6 @@ onBeforeUnmount(() => {
 
         <div class="hero__warning" id="safety">
           <strong>Third-party website warning</strong>
-
           <p>
             Website buttons open external domains run by other parties. Availability, ads,
             redirects, and content are outside your control.
@@ -328,7 +321,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <aside class="hero__panel">
+      <aside class="hero__panel hero__panel--centered">
         <ul class="hero__facts">
           <li>
             <span>Generated</span>
