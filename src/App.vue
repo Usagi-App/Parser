@@ -98,15 +98,13 @@ onMounted(async () => {
 
     <header class="hero card">
       <div class="hero__copy">
-        <p class="hero__eyebrow">Kotatsu source dashboard</p>
-        <h1>Fresh Vue/Vite site for tracking parser sources and health.</h1>
+        <p class="hero__eyebrow">Source dashboard</p>
+        <h1>Tracking Site for parsers sources.</h1>
         <p class="hero__text">
-          This rebuild does not pretend a ready-made API already exists. It is wired to generate its own
-          dataset from the Kotatsu parser repository, then publish a static JSON snapshot the frontend can
-          render fast.
+          Directory only. No manga content is hosted, cached, or proxied here. Visiting a source's site from a card takes you to the third-party site directly. 
         </p>
         <div class="hero__actions">
-          <a class="button button--primary" href="https://github.com/AgentKush/kotatsu-parsers" target="_blank" rel="noreferrer">
+          <a class="button button--primary" href="https://github.com/YakaTeam/kotatsu-parsers" target="_blank" rel="noreferrer">
             Inspect source repo
           </a>
           <a class="button button--ghost" href="https://github.com/YumemiProject/yumemiproject.github.io" target="_blank" rel="noreferrer">
@@ -146,7 +144,7 @@ onMounted(async () => {
       <MetricCard
         label="Working"
         :value="formatNumber(dataset.summary.working)"
-        hint="2xx and 3xx checks passed"
+        hint="Those working ones"
       />
       <MetricCard
         label="Broken"
@@ -156,7 +154,7 @@ onMounted(async () => {
       <MetricCard
         label="Blocked / unknown"
         :value="formatNumber(dataset.summary.blocked + dataset.summary.unknown)"
-        hint="Anti-bot, missing domain, or inconclusive"
+        hint="Wrong domain, anti-bot, cloud security, no access"
       />
     </section>
 
