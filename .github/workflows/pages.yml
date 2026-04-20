@@ -5,7 +5,7 @@ on:
     branches: [main]
   workflow_dispatch:
   schedule:
-    - cron: '13 2 * * *'
+    - cron: '0 2 * * *'
 
 permissions:
   contents: read
@@ -21,8 +21,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out repository
+      - name: Check out website repository
         uses: actions/checkout@v6
+
+      - name: Check out YakaTeam parser source
+        uses: actions/checkout@v6
+        with:
+          repository: YakaTeam/kotatsu-parsers
+          ref: master
+          path: .cache/kotatsu-parsers
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Generate parser catalog JSON
+        run: python scripts/build_catalog.py
+        env:
+          KOTATSU_REPO_DIR: .cache/kotatsu-parsers
+          KOTATSU_OWNER: YakaTeam
+          KOTATSU_REPO: kotatsu-parsers
+          KOTATSU_BRANCH: master
+          OUTPUT_PATH: public/data/sources.json
 
       - name: Set up Node
         uses: actions/setup-node@v6
@@ -32,15 +53,6 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-
-      - name: Generate live source dataset
-        run: npm run generate:data
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          KOTATSU_OWNER: YakaTeam
-          KOTATSU_REPO: kotatsu-parsers
-          KOTATSU_BRANCH: master
-          SKIP_HEALTH_CHECKS: true
 
       - name: Build site
         run: npm run build
