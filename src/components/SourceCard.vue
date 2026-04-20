@@ -11,6 +11,7 @@ const props = defineProps<{
 const websiteUrl = computed(() => {
   const domain = props.source.domains[0]
   if (!domain) return null
+
   return domain.startsWith('http://') || domain.startsWith('https://')
     ? domain
     : `https://${domain}`
@@ -19,7 +20,9 @@ const websiteUrl = computed(() => {
 const contentTypeLabel = computed(() => props.source.contentType ?? 'MANGA')
 const reason = computed(() => props.source.brokenReason || props.source.health.reason)
 const languageLabel = computed(() => props.source.languageName || props.source.language.toUpperCase())
-const visibleDomains = computed(() => props.compact ? props.source.domains.slice(0, 2) : props.source.domains.slice(0, 4))
+const visibleDomains = computed(() =>
+  props.compact ? props.source.domains.slice(0, 2) : props.source.domains.slice(0, 4),
+)
 </script>
 
 <template>
