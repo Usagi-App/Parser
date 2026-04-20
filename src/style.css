@@ -54,6 +54,9 @@ body {
   margin: 0;
   color: var(--text);
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
   background-attachment: fixed;
 }
@@ -524,6 +527,29 @@ code {
   gap: 9px;
 }
 
+
+.sidebar__section--centered {
+  align-items: center;
+  text-align: center;
+}
+
+.sidebar__section--centered .sidebar__label {
+  width: 100%;
+  text-align: center;
+}
+
+.sidebar__section--centered .sidebar__chips {
+  width: 100%;
+  justify-content: center;
+}
+
+.sidebar-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.2;
+}
 .chip-button,
 .sidebar-chip {
   min-height: 33px;
