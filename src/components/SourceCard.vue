@@ -12,6 +12,9 @@ const websiteUrl = computed(() => {
   if (!domain) return null
   return domain.startsWith('http://') || domain.startsWith('https://') ? domain : `https://${domain}`
 })
+
+const contentTypeLabel = computed(() => props.source.contentType ?? 'MANGA')
+const reason = computed(() => props.source.brokenReason || props.source.health.reason)
 </script>
 
 <template>
@@ -26,6 +29,7 @@ const websiteUrl = computed(() => {
 
     <div class="source-card__meta">
       <span>{{ source.language.toUpperCase() }}</span>
+      <span>{{ contentTypeLabel }}</span>
       <span>{{ source.engine ?? 'Custom engine' }}</span>
       <span>{{ source.domains.length }} domain<span v-if="source.domains.length !== 1">s</span></span>
     </div>
@@ -44,18 +48,17 @@ const websiteUrl = computed(() => {
       </span>
     </div>
 
-    <p v-if="source.health.reason" class="source-card__reason">
-      {{ source.health.reason }}
+    <p v-if="reason" class="source-card__reason">
+      {{ reason }}
     </p>
 
-    <p class="source-card__warning">
-      External website opens a third-party domain. Use it at your own risk.
-    </p>
-
-    <div class="source-card__actions">
-      <a v-if="websiteUrl" :href="websiteUrl" target="_blank" rel="noreferrer noopener">Open website</a>
-      <a :href="source.repoUrl" target="_blank" rel="noreferrer noopener">Open parser</a>
-      <a :href="source.rawUrl" target="_blank" rel="noreferrer noopener">Raw file</a>
+    <div class="source-card__footer">
+      <p class="source-card__warning">Website opens a third-party domain.</p>
+      <div class="source-card__actions">
+        <a v-if="websiteUrl" class="button button--primary button--small" :href="websiteUrl" target="_blank" rel="noreferrer noopener">Website</a>
+        <a class="button button--ghost button--small" :href="source.repoUrl" target="_blank" rel="noreferrer noopener">Parser file</a>
+        <a class="button button--ghost button--small" :href="source.rawUrl" target="_blank" rel="noreferrer noopener">Raw</a>
+      </div>
     </div>
   </article>
 </template>
