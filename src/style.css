@@ -1,3 +1,5 @@
+/* ===== incremental fixes only ===== */
+
 :root {
   color-scheme: dark;
 }
@@ -13,6 +15,7 @@ html {
   scroll-margin-top: 96px;
 }
 
+/* Sticky top bar on scroll */
 .topbar {
   position: sticky;
   top: 10px;
@@ -27,9 +30,7 @@ html {
 }
 
 .topbar--compact {
-  top: 8px;
-  padding-top: 12px !important;
-  padding-bottom: 12px !important;
+  top: 6px;
 }
 
 .topbar__logo {
@@ -53,34 +54,12 @@ html {
   display: inline;
 }
 
+/* Search/select width + dark native inputs */
 .field input,
 .field select {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-}
-
-.field select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  color-scheme: dark;
-  background-color: #101826;
-  background-image:
-    linear-gradient(45deg, transparent 50%, #dbe7ff 50%),
-    linear-gradient(135deg, #dbe7ff 50%, transparent 50%);
-  background-position:
-    calc(100% - 18px) calc(50% - 3px),
-    calc(100% - 12px) calc(50% - 3px);
-  background-size: 6px 6px, 6px 6px;
-  background-repeat: no-repeat;
-  padding-right: 38px;
-}
-
-.field select option,
-.field select optgroup {
-  background: #101826;
-  color: #e6efff;
 }
 
 .field--search {
@@ -91,43 +70,29 @@ html {
   min-width: 0;
 }
 
+.field select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  color-scheme: dark;
+  background-color: #101826;
+  color: #e6efff;
+  padding-right: 38px;
+}
+
+.field select option,
+.field select optgroup {
+  background: #101826;
+  color: #e6efff;
+}
+
+/* Keep sidebar sticky on desktop only */
 .sidebar {
   position: sticky;
   top: 88px;
 }
 
-.sources--grid {
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-}
-
-.sources--list {
-  grid-template-columns: 1fr;
-}
-
-.sources--list .source-card {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-}
-
-.sources--list .source-card__top,
-.sources--list .source-card__footer {
-  display: contents;
-}
-
-.sources--list .source-card__meta {
-  order: 3;
-}
-
-.sources--list .domain-list {
-  order: 4;
-}
-
-.sources--list .source-card__actions {
-  justify-content: flex-end;
-}
-
+/* source card safety */
 .source-card,
 .source-card__title-wrap,
 .source-card h3,
@@ -155,10 +120,10 @@ html {
 .source-card__tag {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
+  min-height: 28px;
   padding: 0 10px;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -170,17 +135,90 @@ html {
   border: 1px solid rgba(255, 67, 97, 0.32);
 }
 
+/* Compact list mode */
+.sources--list {
+  grid-template-columns: 1fr;
+}
+
+.sources--list .source-card {
+  padding: 14px 16px;
+}
+
 .source-card--compact .source-card__meta {
   gap: 8px;
 }
 
 .source-card--compact .source-card__meta span,
 .source-card--compact .domain-chip {
-  min-height: 30px;
+  min-height: 28px;
   padding: 0 10px;
   font-size: 0.76rem;
 }
 
+/* Metric card helpers */
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metric-card__label {
+  margin: 0;
+  opacity: 0.78;
+  font-size: 0.9rem;
+}
+
+.metric-card__value {
+  font-size: clamp(1.4rem, 2vw, 2rem);
+  line-height: 1;
+}
+
+.metric-card__hint {
+  margin: 0;
+  opacity: 0.7;
+  font-size: 0.85rem;
+}
+
+/* Status pill */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.status-pill--working {
+  color: #d8ffe7;
+  background: rgba(52, 199, 89, 0.14);
+  border-color: rgba(52, 199, 89, 0.3);
+}
+
+.status-pill--blocked {
+  color: #ffe8c7;
+  background: rgba(255, 159, 10, 0.14);
+  border-color: rgba(255, 159, 10, 0.28);
+}
+
+.status-pill--unknown {
+  color: #dbe7ff;
+  background: rgba(120, 138, 163, 0.2);
+  border-color: rgba(120, 138, 163, 0.3);
+}
+
+.status-pill--broken {
+  color: #ffd9df;
+  background: rgba(255, 67, 97, 0.14);
+  border-color: rgba(255, 67, 97, 0.3);
+}
+
+/* Mobile fixes */
 @media (max-width: 1180px) {
   .sidebar {
     position: static;
@@ -229,8 +267,6 @@ html {
   }
 
   .sources--list .source-card {
-    grid-template-columns: 1fr;
-    align-items: stretch;
     padding: 12px 14px;
   }
 
