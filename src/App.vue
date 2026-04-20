@@ -59,7 +59,7 @@ watch(rawQuery, (value) => {
 })
 
 function onScroll() {
-  isScrolled.value = window.scrollY > 20
+  isScrolled.value = window.scrollY > 16
 }
 
 function withSearchText(source: SourceItem): SourceItem {
@@ -218,7 +218,7 @@ onMounted(async () => {
 
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}data/sources.json`, {
-      cache: 'force-cache',
+      cache: 'no-store',
     })
 
     if (!response.ok) {
@@ -250,7 +250,7 @@ onBeforeUnmount(() => {
   <div class="shell">
     <div class="shell__noise"></div>
 
-    <header :class="['topbar', 'card', { 'topbar--compact': isScrolled }]" id="top">
+    <header :class="['topbar', { 'topbar--compact': isScrolled }]" id="top">
       <div class="topbar__brand">
         <div class="topbar__logo">📚</div>
 
@@ -274,7 +274,7 @@ onBeforeUnmount(() => {
           target="_blank"
           rel="noreferrer noopener"
         >
-          🧩 <span class="nav-label">Source repo</span>
+          🧩 <span class="nav-label">Repo</span>
         </a>
       </div>
     </header>
@@ -283,7 +283,7 @@ onBeforeUnmount(() => {
       <div class="hero__copy">
         <p class="hero__eyebrow">Parser / Source Catalog</p>
 
-        <h1 class="hero__title">Browse source entries without the app clutter</h1>
+        <h1 class="hero__title">Browse source entries in a clean catalog</h1>
 
         <p class="hero__text">
           This website serves only as an informational catalog of parser sources,
@@ -291,8 +291,8 @@ onBeforeUnmount(() => {
         </p>
 
         <div class="hero__actions">
-          <a class="button button--primary" href="#catalog">📚 Browse sources</a>
-          <a class="button button--ghost" href="#filters">🔎 Open filters</a>
+          <a class="button button--primary" href="#catalog">Browse sources</a>
+          <a class="button button--ghost" href="#filters">Open filters</a>
         </div>
 
         <div class="hero__warning" id="safety">
