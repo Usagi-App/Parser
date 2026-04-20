@@ -94,9 +94,9 @@ def extract_entry(repo_root: Path, file_path: Path, owner: str, repo: str, branc
     relative_path = file_path.relative_to(repo_root).as_posix()
     health_status = 'broken' if is_broken else 'working'
     health_reason = (
-        broken_reason or 'Marked @Broken in upstream parser source.'
+        broken_reason or "This is catalog metadata, not a live network test."
         if is_broken
-        else 'Not marked @Broken upstream. This is catalog metadata, not a live network test.'
+        else "This is catalog metadata, not a live network test."
     )
 
     return {
