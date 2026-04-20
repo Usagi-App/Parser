@@ -345,7 +345,16 @@ onBeforeUnmount(() => {
 
           <li>
             <span>Builder</span>
-            <strong>{{ dataset.generatedBy ?? 'Static bundle' }}</strong>
+            <a
+              v-if="dataset.generatedBy === 'scripts/build_catalog.py'"
+              class="meta-link"
+              href="https://github.com/Usagi-App/Parser/blob/main/scripts/build_catalog.py"
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              scripts/build_catalog.py
+            </a>
+            <strong v-else>{{ dataset.generatedBy ?? 'Static bundle' }}</strong>
           </li>
         </ul>
       </aside>
