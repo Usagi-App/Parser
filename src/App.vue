@@ -195,6 +195,8 @@ const filteredSources = computed<SourceItem[]>(() => {
   })
 })
 
+const shouldAnimateView = computed(() => filteredSources.value.length < 50)
+
 const qualityScore = computed(() => {
   const total = dataset.value.summary.total || dataset.value.sources.length
   if (!total) return 0
@@ -314,12 +316,13 @@ onBeforeUnmount(() => {
           </p>
         </div>
 
-        <div class="hero__warning">
-          <strong>
-            Catalog only. This website lists source metadata for reference and discovery.
+        <div class="hero__warning hero__warning--danger">
+          <strong>Catalog only</strong>
+          <p>
+            This website lists source metadata for reference and discovery.
             No reader application is provided here, and no source content is hosted,
             cached, or proxied by this website.
-          </strong>
+          </p>
         </div>
       </div>
 
@@ -354,7 +357,7 @@ onBeforeUnmount(() => {
               target="_blank"
               rel="noreferrer noopener"
             >
-              scripts/build_catalog.py
+              scripts/build_catalog
             </a>
             <strong v-else>{{ dataset.generatedBy ?? 'Static bundle' }}</strong>
           </li>
@@ -546,7 +549,7 @@ onBeforeUnmount(() => {
           :class="[
             'sources',
             `sources--${view}`,
-            { 'sources--animating': isAnimatingView }
+            { 'sources--animating': isAnimatingView && shouldAnimateView }
           ]"
         >
           <SourceCard
