@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useVirtualizer } from '@tanstack/vue-virtual'
 import MetricCard from '@/components/MetricCard.vue'
 import SourceCard from '@/components/SourceCard.vue'
 
@@ -19,8 +20,10 @@ const contentType = ref('all')
 const nsfw = ref<'all' | 'safe' | 'nsfw'>('all')
 const sort = ref<'title' | 'language' | 'status' | 'domains'>('status')
 const view = ref<'grid' | 'list'>('grid')
-const isScrolled = ref(false)
 const isAnimatingView = ref(false)
+
+const forceListThreshold = 240
+const virtualizeThreshold = 80
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English',
@@ -62,19 +65,17 @@ watch(rawQuery, (value) => {
   }, 140)
 })
 
-function onScroll() {
-  isScrolled.value = window.scrollY > 16
-}
-
 function setView(next: 'grid' | 'list') {
+  if (next === 'grid' && isGridLocked.value) return
   if (view.value === next) return
+
   isAnimatingView.value = true
   view.value = next
 
   window.clearTimeout(viewAnimationTimer)
   viewAnimationTimer = window.setTimeout(() => {
     isAnimatingView.value = false
-  }, 220)
+  }, 180)
 }
 
 function withSearchText(source: SourceItem): SourceItem {
@@ -195,7 +196,12 @@ const filteredSources = computed<SourceItem[]>(() => {
   })
 })
 
+const isGridLocked = computed(() => filteredSources.value.length > forceListThreshold)
+const effectiveView = computed<'grid' | 'list'>(() => (isGridLocked.value ? 'list' : view.value))
 const shouldAnimateView = computed(() => filteredSources.value.length < 50)
+const shouldVirtualize = computed(
+  () => effectiveView.value === 'list' && filteredSources.value.length > virtualizeThreshold,
+)
 
 const qualityScore = computed(() => {
   const total = dataset.value.summary.total || dataset.value.sources.length
@@ -223,10 +229,48 @@ function resetFilters() {
   sort.value = 'status'
 }
 
-onMounted(async () => {
-  window.addEventListener('scroll', onScroll, { passive: true })
-  onScroll()
+const listViewportRef = ref<HTMLElement | null>(null)
 
+const rowVirtualizerOptions = computed(() => ({
+  count: filteredSources.value.length,
+  getScrollElement: () => listViewportRef.value,
+  estimateSize: () => 220,
+  overscan: 8,
+  getItemKey: (index: number) => filteredSources.value[index]?.id ?? index,
+}))
+
+const rowVirtualizer = useVirtualizer(rowVirtualizerOptions)
+const virtualRows = computed(() => (shouldVirtualize.value ? rowVirtualizer.value.getVirtualItems() : []))
+const totalSize = computed(() => (shouldVirtualize.value ? rowVirtualizer.value.getTotalSize() : 0))
+
+function measureVirtualRow(el: Element | null) {
+  if (!el) return
+  rowVirtualizer.value.measureElement(el)
+}
+
+watch(
+  () => filteredSources.value.length,
+  (count) => {
+    if (count > forceListThreshold && view.value === 'grid') {
+      view.value = 'list'
+    }
+  },
+)
+
+watch(
+  [query, status, language, contentType, nsfw, sort, effectiveView],
+  async () => {
+    await nextTick()
+
+    if (listViewportRef.value) {
+      listViewportRef.value.scrollTop = 0
+    }
+
+    rowVirtualizer.value.scrollToOffset(0)
+  },
+)
+
+onMounted(async () => {
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}data/sources.json`, {
       cache: 'force-cache',
@@ -249,7 +293,6 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.clearTimeout(searchDebounce)
   window.clearTimeout(viewAnimationTimer)
-  window.removeEventListener('scroll', onScroll)
 })
 </script>
 
@@ -257,7 +300,7 @@ onBeforeUnmount(() => {
   <div class="shell">
     <div class="shell__noise"></div>
 
-    <header :class="['topbar', { 'topbar--compact': isScrolled }]" id="top">
+    <header class="topbar" id="top">
       <div class="topbar__brand">
         <img
           class="topbar__logo-image"
@@ -284,7 +327,7 @@ onBeforeUnmount(() => {
       <div class="topbar__actions">
         <a
           class="button button--ghost"
-          :href="`https://github.com/Usagi-App/Parser`"
+          href="https://github.com/Usagi-App/Parser"
           target="_blank"
           rel="noreferrer noopener"
         >
@@ -407,7 +450,7 @@ onBeforeUnmount(() => {
       <aside class="sidebar card" id="filters">
         <div class="sidebar__section">
           <div class="sidebar__section-head">
-            <p class="sidebar__eyebrow">Sticky controls</p>
+            <p class="sidebar__eyebrow">Controls</p>
             <h2>Find the source fast</h2>
           </div>
 
@@ -432,13 +475,14 @@ onBeforeUnmount(() => {
             <button :class="['chip-button', { 'is-active': status === 'all' }]" @click="applyStatus('all')">All</button>
             <button :class="['chip-button', { 'is-active': status === 'working' }]" @click="applyStatus('working')">Working</button>
             <button :class="['chip-button', { 'is-active': status === 'broken' }]" @click="applyStatus('broken')">Broken</button>
+            <button :class="['chip-button', { 'is-active': status === 'blocked' }]" @click="applyStatus('blocked')">Blocked</button>
+            <button :class="['chip-button', { 'is-active': status === 'unknown' }]" @click="applyStatus('unknown')">Unknown</button>
           </div>
         </div>
 
         <div class="sidebar__section sidebar__section--stacked">
           <label class="field">
             <span>Language</span>
-
             <select v-model="language">
               <option v-for="option in languages" :key="option.value" :value="option.value">
                 {{ option.label }}
@@ -448,7 +492,6 @@ onBeforeUnmount(() => {
 
           <label class="field">
             <span>Content type</span>
-
             <select v-model="contentType">
               <option v-for="option in contentTypes" :key="option" :value="option">
                 {{ option === 'all' ? 'All content types' : option }}
@@ -458,7 +501,6 @@ onBeforeUnmount(() => {
 
           <label class="field">
             <span>Content safety</span>
-
             <select v-model="nsfw">
               <option value="all">All entries</option>
               <option value="safe">Safe only</option>
@@ -468,7 +510,6 @@ onBeforeUnmount(() => {
 
           <label class="field">
             <span>Sort</span>
-
             <select v-model="sort">
               <option value="status">Status</option>
               <option value="title">Title</option>
@@ -480,7 +521,6 @@ onBeforeUnmount(() => {
 
         <div class="sidebar__section sidebar__section--centered">
           <div class="sidebar__label">Top locales</div>
-
           <div class="sidebar__chips">
             <span v-for="[code, count] in topLocales" :key="code" class="sidebar-chip">
               {{ code.toUpperCase() }} · {{ formatNumber(count) }}
@@ -490,7 +530,6 @@ onBeforeUnmount(() => {
 
         <div class="sidebar__section sidebar__section--centered">
           <div class="sidebar__label">Top content types</div>
-
           <div class="sidebar__chips">
             <span v-for="[type, count] in topTypes" :key="type" class="sidebar-chip">
               {{ type }} · {{ formatNumber(count) }}
@@ -517,11 +556,18 @@ onBeforeUnmount(() => {
 
           <div class="catalog-toolbar__controls">
             <div class="segmented">
-              <button :class="['segmented__item', { 'is-active': view === 'grid' }]" @click="setView('grid')">
+              <button
+                :class="['segmented__item', { 'is-active': effectiveView === 'grid' }]"
+                :disabled="isGridLocked"
+                @click="setView('grid')"
+              >
                 Grid
               </button>
 
-              <button :class="['segmented__item', { 'is-active': view === 'list' }]" @click="setView('list')">
+              <button
+                :class="['segmented__item', { 'is-active': effectiveView === 'list' }]"
+                @click="setView('list')"
+              >
                 List
               </button>
             </div>
@@ -530,6 +576,10 @@ onBeforeUnmount(() => {
               Showing {{ formatNumber(filteredSources.length) }} source<span v-if="filteredSources.length !== 1">s</span>
             </p>
           </div>
+
+          <p v-if="isGridLocked" class="catalog-toolbar__perf-note">
+            Grid is automatically disabled above {{ formatNumber(forceListThreshold) }} results to keep scrolling smooth.
+          </p>
         </section>
 
         <section v-if="loading" class="loading card">
@@ -543,10 +593,34 @@ onBeforeUnmount(() => {
         </section>
 
         <section
+          v-else-if="shouldVirtualize"
+          ref="listViewportRef"
+          class="sources-virtual card"
+        >
+          <div
+            class="sources-virtual__inner"
+            :style="{ height: `${totalSize}px` }"
+          >
+            <div
+              v-for="virtualRow in virtualRows"
+              :key="virtualRow.key"
+              :ref="measureVirtualRow"
+              class="sources-virtual__row"
+              :style="{ transform: `translateY(${virtualRow.start}px)` }"
+            >
+              <SourceCard
+                :source="filteredSources[virtualRow.index]"
+                :compact="true"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section
           v-else
           :class="[
             'sources',
-            `sources--${view}`,
+            `sources--${effectiveView}`,
             { 'sources--animating': isAnimatingView && shouldAnimateView }
           ]"
         >
@@ -554,7 +628,7 @@ onBeforeUnmount(() => {
             v-for="source in filteredSources"
             :key="source.id"
             :source="source"
-            :compact="view === 'list'"
+            :compact="effectiveView === 'list'"
           />
         </section>
       </main>
