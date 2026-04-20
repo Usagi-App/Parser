@@ -1,16 +1,24 @@
 import type { SourceStatus } from '@/types'
 
+const LOCALE = 'en-US'
+
 export function formatNumber(value: number): string {
-  return new Intl.NumberFormat('en-US').format(value)
+  return new Intl.NumberFormat(LOCALE).format(value)
 }
 
 export function formatDate(value: string | null): string {
   if (!value) return 'Not generated yet'
 
-  return new Intl.DateTimeFormat('en-US', {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Invalid date'
+  }
+
+  return new Intl.DateTimeFormat(LOCALE, {
     dateStyle: 'medium',
     timeStyle: 'short',
-  }).format(new Date(value))
+  }).format(date)
 }
 
 export function titleCaseStatus(status: SourceStatus): string {
@@ -22,6 +30,7 @@ export function titleCaseStatus(status: SourceStatus): string {
     case 'blocked':
       return 'Blocked'
     case 'unknown':
+    default:
       return 'Unknown'
   }
 }
