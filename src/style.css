@@ -33,6 +33,46 @@
   --content-width: 1440px;
 }
 
+html[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f5f7fb;
+  --surface: #ffffff;
+  --surface-2: #f3f6fb;
+  --border: rgba(15, 23, 42, 0.08);
+  --border-strong: rgba(15, 23, 42, 0.14);
+  --text: #0f172a;
+  --text-muted: #334155;
+  --text-soft: #64748b;
+  --warning-bg: rgba(245, 158, 11, 0.12);
+  --warning-border: rgba(245, 158, 11, 0.24);
+  --warning-text: #92400e;
+  --danger-bg: rgba(244, 63, 94, 0.1);
+  --danger-border: rgba(244, 63, 94, 0.22);
+  --danger-text: #9f1239;
+}
+
+html[data-theme='crimson'] {
+  --bg: #160c10;
+  --surface: #1f1218;
+  --surface-2: #26161d;
+  --text: #fff4f6;
+  --text-muted: #f3c7cf;
+  --text-soft: #d8a1ac;
+  --accent: #ff6b87;
+  --accent-2: #ff9b7a;
+}
+
+html[data-theme='forest'] {
+  --bg: #0f1613;
+  --surface: #16211b;
+  --surface-2: #1b2821;
+  --text: #edf8f1;
+  --text-muted: #c2dccb;
+  --text-soft: #88a893;
+  --accent: #6fd19f;
+  --accent-2: #94e08a;
+}
+
 *,
 *::before,
 *::after {
@@ -54,7 +94,7 @@ html {
 body {
   margin: 0;
   color: var(--text);
-  background: linear-gradient(180deg, #11151a 0%, #0f1217 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 92%, #ffffff 8%) 0%, var(--bg) 100%);
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -123,7 +163,7 @@ polyline {
   z-index: 100;
   padding: 10px 14px;
   border-radius: 12px;
-  background: #11161c;
+  background: var(--surface);
   border: 1px solid var(--border-strong);
 }
 
@@ -141,7 +181,7 @@ polyline {
 .catalog-toolbar,
 .topbar,
 .overview-card {
-  background: #161b22;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
@@ -179,7 +219,7 @@ polyline {
   align-items: center;
   justify-content: center;
   color: var(--text);
-  background: #212835;
+  background: color-mix(in srgb, var(--surface-2) 78%, var(--accent) 22%);
   border: 1px solid var(--border);
   flex: 0 0 44px;
 }
@@ -227,11 +267,26 @@ polyline {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   border: 0;
   border-radius: var(--radius-pill);
   background: transparent;
   color: var(--text-muted);
   transition: background-color 140ms ease, color 140ms ease;
+}
+
+.topbar__nav-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.9;
+}
+
+.topbar__nav-icon svg {
+  width: 16px;
+  height: 16px;
 }
 
 .topbar__nav-button:hover {
@@ -294,7 +349,7 @@ polyline {
   width: min(82vw, 320px);
   height: 100%;
   padding: 18px;
-  background: #12161c;
+  background: color-mix(in srgb, var(--surface) 90%, #000000 10%);
   border-left: 1px solid var(--border);
   box-shadow: -12px 0 40px rgba(0, 0, 0, 0.28);
   display: flex;
@@ -375,25 +430,25 @@ polyline {
 }
 
 .button--primary {
-  background: #7c8cff;
+  background: var(--accent);
   color: #101317;
   font-weight: 700;
   border-color: transparent;
 }
 
 .button--primary:hover {
-  background: #8a97ff;
+  background: color-mix(in srgb, var(--accent) 88%, #ffffff 12%);
 }
 
 .button--website {
-  background: #b7bec7;
+  background: color-mix(in srgb, var(--text) 78%, #cdd4dc 22%);
   color: #0f1216;
   font-weight: 700;
   border-color: transparent;
 }
 
 .button--website:hover {
-  background: #c4cad1;
+  background: color-mix(in srgb, var(--text) 70%, #d8dde4 30%);
 }
 
 .button--ghost {
@@ -404,9 +459,9 @@ polyline {
 .overview-card {
   margin-top: 18px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-  gap: 22px;
-  padding: 26px;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  gap: 18px;
+  padding: 24px;
   position: relative;
   overflow: hidden;
 }
@@ -443,13 +498,13 @@ polyline {
 
 .overview-card__bars {
   display: grid;
-  gap: 10px;
-  margin-top: 18px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .overview-bar {
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .overview-bar__head {
@@ -461,18 +516,18 @@ polyline {
 
 .overview-bar__head span {
   color: var(--text-soft);
-  font-size: 0.7rem;
+  font-size: 0.64rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-weight: 800;
 }
 
 .overview-bar__head strong {
-  font-size: 0.82rem;
+  font-size: 0.76rem;
 }
 
 .overview-bar__track {
-  height: 7px;
+  height: 5px;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.05);
@@ -502,7 +557,7 @@ polyline {
 
 .overview-bar__meta {
   color: var(--text-soft);
-  font-size: 0.75rem;
+  font-size: 0.68rem;
 }
 
 .overview-bar__fill.is-working {
@@ -550,8 +605,9 @@ polyline {
   position: relative;
   z-index: 1;
   width: 100%;
+  max-width: 420px;
   margin-top: 0;
-  padding: 14px 14px 12px;
+  padding: 11px 12px 10px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.035);
@@ -559,10 +615,10 @@ polyline {
 
 .overview-card__decor {
   position: absolute;
-  right: -56px;
-  top: -56px;
-  width: 180px;
-  height: 180px;
+  right: -24px;
+  top: -24px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(124, 140, 255, 0.18), transparent 70%);
   pointer-events: none;
@@ -684,7 +740,7 @@ polyline {
   min-height: 46px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  background: #12171d;
+  background: color-mix(in srgb, var(--surface-2) 84%, #000000 16%);
   color: var(--text);
   padding: 0 14px;
   outline: none;
@@ -723,7 +779,7 @@ polyline {
 
 .field select option,
 .field select optgroup {
-  background: #12171d;
+  background: color-mix(in srgb, var(--surface-2) 84%, #000000 16%);
   color: var(--text);
 }
 
@@ -903,7 +959,7 @@ polyline {
   min-height: 36px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  background: #12171d;
+  background: color-mix(in srgb, var(--surface-2) 84%, #000000 16%);
   color: var(--text);
   padding: 0 8px;
   text-align: center;
@@ -1357,5 +1413,16 @@ polyline {
   .pagination__center {
     width: 100%;
     justify-content: center;
+  }
+}
+
+
+@media (max-width: 1100px) {
+  .overview-card {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-card__stats {
+    max-width: 420px;
   }
 }
