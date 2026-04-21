@@ -678,34 +678,32 @@ onBeforeUnmount(() => {
 
         <div class="overview-card__bars overview-card__bars--panel" aria-label="Catalog summary bars">
           <article
-            v-for="bar in overviewBars"
+            v-for="(bar, index) in overviewBars"
             :key="bar.label"
             class="overview-bar"
           >
             <div class="overview-bar__head">
               <span>{{ bar.label }}</span>
-              <strong>{{ formatNumber(bar.value) }} · {{ bar.percent }}%</strong>
+              <strong>{{ bar.percent }}%</strong>
             </div>
 
             <div class="overview-bar__track">
-              <span :class="['overview-bar__fill', `is-${bar.tone}`]" :style="{ width: `${bar.percent}%` }"></span>
+              <span
+                :class="['overview-bar__fill', `is-${bar.tone}`]"
+                :style="{
+                  width: `${bar.percent}%`,
+                  '--bar-delay': `${index * 120}ms`,
+                }"
+              ></span>
             </div>
+
+            <small class="overview-bar__meta">{{ formatNumber(bar.value) }}</small>
           </article>
         </div>
       </div>
     </section>
 
     <section class="info-banner card" id="notices">
-      <div class="info-banner__main">
-        <p>{{ dataset.disclaimer }}</p>
-
-        <p v-if="dataset.duplicatesSkipped?.length" class="info-banner__meta">
-          Duplicate parser keys skipped: {{ dataset.duplicatesSkipped.join(', ') }}
-        </p>
-
-        <p v-if="error" class="info-banner__error">Live dataset failed to load: {{ error }}</p>
-      </div>
-
       <div class="info-banner__notices">
         <article
           v-for="notice in sidebarNotices"
