@@ -49,7 +49,8 @@ const contentTypeLabel = computed(() => {
 })
 
 const brokenReason = computed(() => {
-  return props.source.brokenReason || props.source.health.reason
+  if (props.source.health.status === 'working') return null
+  return props.source.brokenReason || props.source.health.reason || null
 })
 </script>
 
