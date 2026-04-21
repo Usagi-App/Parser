@@ -665,8 +665,8 @@ onBeforeUnmount(() => {
 
     <section class="hero card">
       <div class="hero__copy">
-        <p class="hero__eyebrow">Vue / Vite catalog</p>
-        <h1 class="hero__title">Clean parser directory with faster search and lighter rendering</h1>
+        <p class="hero__eyebrow">Ccatalog</p>
+        <h1 class="hero__title">Search easy</h1>
 
         <p class="hero__text">
           Browse parser entries, domains, languages, and health state without reader logic,
@@ -740,8 +740,16 @@ onBeforeUnmount(() => {
           </li>
 
           <li>
-            <span>Entries</span>
-            <strong>{{ formatNumber(dataset.summary.total || dataset.sources.length) }}</strong>
+            <span>Developer</span>
+            <a
+              v-if="dataset.generatedBy === 'InvalidDavid'"
+              class="meta-link"
+              href="https://github.com/InvalidDavid"
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              scripts/build_catalog
+            </a>
           </li>
         </ul>
       </aside>
