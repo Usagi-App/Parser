@@ -30,7 +30,7 @@ const parallaxY = ref(0)
 const activeNav = ref('home')
 const isScrolled = ref(false)
 const showBackToTop = ref(false)
-const layoutNavPreference = ref<'filters' | 'catalog' | 'notices'>('catalog')
+const layoutNavPreference = ref<'filters' | 'catalog'>('catalog')
 
 const VIEW_PREFS_KEY = 'usagi.viewPrefs'
 
@@ -203,11 +203,15 @@ function updateActiveNav() {
   const currentY = window.scrollY + offset
 
   const distribution = document.getElementById('distribution')
+  const notices = document.getElementById('notices')
   const layout = document.querySelector('.layout') as HTMLElement | null
 
-  if (distribution && currentY >= distribution.offsetTop && (!layout || currentY < layout.offsetTop)) {
+  if (distribution && currentY >= distribution.offsetTop) {
     activeNav.value = 'distribution'
-    return
+  }
+
+  if (notices && currentY >= notices.offsetTop) {
+    activeNav.value = 'notices'
   }
 
   if (layout) {
@@ -220,9 +224,11 @@ function updateActiveNav() {
     }
   }
 
-  const notices = document.getElementById('notices')
   if (notices && currentY >= notices.offsetTop) {
-    activeNav.value = 'notices'
+    return
+  }
+
+  if (distribution && currentY >= distribution.offsetTop) {
     return
   }
 
@@ -250,7 +256,7 @@ function scrollToSection(id: string) {
     return
   }
 
-  if (id === 'filters' || id === 'catalog' || id === 'notices') {
+  if (id === 'filters' || id === 'catalog') {
     layoutNavPreference.value = id
   }
 
@@ -516,6 +522,18 @@ const overviewFacts = computed(() => [
   { label: 'NSFW', value: formatNumber(dataset.value.summary.nsfw ?? 0), hint: 'Entries tagged as adult / explicit' },
 ])
 
+
+
+const overviewBars = computed(() => {
+  const total = dataset.value.summary.total || dataset.value.sources.length || 1
+
+  return [
+    { label: 'Available', value: dataset.value.summary.working, percent: Math.round((dataset.value.summary.working / total) * 100), tone: 'working' },
+    { label: 'Broken', value: dataset.value.summary.broken, percent: Math.round((dataset.value.summary.broken / total) * 100), tone: 'broken' },
+    { label: 'NSFW', value: dataset.value.summary.nsfw ?? 0, percent: Math.round(((dataset.value.summary.nsfw ?? 0) / total) * 100), tone: 'nsfw' },
+  ]
+})
+
 function applyStatus(next: 'all' | 'working' | 'blocked') {
   status.value = next
 }
@@ -700,6 +718,23 @@ onBeforeUnmount(() => {
             Open filters
           </button>
         </div>
+
+        <div class="overview-card__bars" aria-label="Catalog summary bars">
+          <article
+            v-for="bar in overviewBars"
+            :key="bar.label"
+            class="overview-bar"
+          >
+            <div class="overview-bar__head">
+              <span>{{ bar.label }}</span>
+              <strong>{{ formatNumber(bar.value) }} · {{ bar.percent }}%</strong>
+            </div>
+
+            <div class="overview-bar__track">
+              <span :class="['overview-bar__fill', `is-${bar.tone}`]" :style="{ width: `${bar.percent}%` }"></span>
+            </div>
+          </article>
+        </div>
       </div>
 
       <div class="overview-card__stats">
@@ -726,16 +761,27 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section class="info-banner card">
-      <div>
+    <section class="info-banner card" id="notices">
+      <div class="info-banner__main">
         <p>{{ dataset.disclaimer }}</p>
 
         <p v-if="dataset.duplicatesSkipped?.length" class="info-banner__meta">
           Duplicate parser keys skipped: {{ dataset.duplicatesSkipped.join(', ') }}
         </p>
+
+        <p v-if="error" class="info-banner__error">Live dataset failed to load: {{ error }}</p>
       </div>
 
-      <p v-if="error" class="info-banner__error">Live dataset failed to load: {{ error }}</p>
+      <div class="info-banner__notices">
+        <article
+          v-for="notice in sidebarNotices"
+          :key="notice.id"
+          :class="['notice-card', `notice-card--${notice.variant}`]"
+        >
+          <strong>{{ notice.title }}</strong>
+          <p>{{ notice.body }}</p>
+        </article>
+      </div>
     </section>
 
     <div class="layout">
@@ -808,17 +854,6 @@ onBeforeUnmount(() => {
               <option value="domains">Domain count</option>
             </select>
           </label>
-        </div>
-
-        <div id="notices" class="sidebar__section sidebar__notice-stack">
-          <article
-            v-for="notice in sidebarNotices"
-            :key="notice.id"
-            :class="['notice-card', `notice-card--${notice.variant}`]"
-          >
-            <strong>{{ notice.title }}</strong>
-            <p>{{ notice.body }}</p>
-          </article>
         </div>
 
         <div class="sidebar__section sidebar__actions">
