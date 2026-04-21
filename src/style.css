@@ -500,10 +500,23 @@ polyline {
 
 .overview-card__stats {
   position: relative;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
   min-width: 0;
+}
+
+.overview-card__stats--bars {
+  display: flex;
+  align-items: stretch;
+}
+
+.overview-card__bars--panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  margin-top: 0;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .overview-card__decor {
@@ -566,6 +579,7 @@ polyline {
 
 .info-banner__notices {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
