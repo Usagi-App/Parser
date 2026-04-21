@@ -746,8 +746,8 @@ onBeforeUnmount(() => {
 
     <section class="overview-card card" id="distribution">
       <div class="overview-card__copy">
-        <p class="hero__eyebrow">Vue / Vite catalog</p>
-        <h1 class="overview-card__title">Clean parser directory with faster search and lighter rendering</h1>
+        <p class="hero__eyebrow">Catalog</p>
+        <h1 class="overview-card__title">Easy search browser</h1>
 
         <p class="overview-card__text">
           Browse parser entries, domains, languages, and health state without reader logic,
