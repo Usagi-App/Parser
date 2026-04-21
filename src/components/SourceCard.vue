@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import type { SourceItem } from '@/types'
 import StatusPill from './StatusPill.vue'
 
@@ -7,9 +7,6 @@ const props = defineProps<{
   source: SourceItem
   compact?: boolean
 }>()
-
-const copied = ref(false)
-let copiedTimer: number | undefined
 
 function formatContentType(value?: string) {
   const normalized = (value ?? 'MANGA').trim().toUpperCase()
@@ -54,23 +51,10 @@ const contentTypeLabel = computed(() => {
 const brokenReason = computed(() => {
   return props.source.brokenReason || props.source.health.reason
 })
-
-async function copyLink() {
-  const url = `${window.location.origin}${window.location.pathname}#src-${props.source.key}`
-
-  try {
-    await navigator.clipboard.writeText(url)
-    copied.value = true
-    window.clearTimeout(copiedTimer)
-    copiedTimer = window.setTimeout(() => {
-      copied.value = false
-    }, 1500)
-  } catch {}
-}
 </script>
 
 <template>
-  <article :id="`src-${source.key}`" :class="['source-card', { 'source-card--compact': compact }]">
+  <article :class="['source-card', { 'source-card--compact': compact }]">
     <div class="source-card__top">
       <div class="source-card__title-wrap">
         <p class="source-card__eyebrow">{{ contentTypeLabel }}</p>
@@ -95,7 +79,7 @@ async function copyLink() {
       {{ brokenReason }}
     </p>
 
-    <div v-if="visibleDomains.length" class="domain-list">
+    <div v-if="visibleDomains.length && !compact" class="domain-list">
       <span v-for="domain in visibleDomains" :key="domain" class="domain-chip">{{ domain }}</span>
       <span v-if="hiddenDomainCount > 0" class="domain-chip domain-chip--more">
         +{{ hiddenDomainCount }} more
@@ -132,15 +116,6 @@ async function copyLink() {
         >
           Raw
         </a>
-
-        <button
-          v-if="!compact"
-          class="button button--ghost button--small"
-          type="button"
-          @click="copyLink"
-        >
-          {{ copied ? 'Copied' : 'Copy link' }}
-        </button>
       </div>
     </div>
   </article>
