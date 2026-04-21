@@ -29,6 +29,8 @@ const drawerOpen = ref(false)
 const parallaxY = ref(0)
 const activeNav = ref('home')
 const layoutNavPreference = ref<'filters' | 'catalog'>('catalog')
+const isScrolled = ref(false)
+const showBackToTop = ref(false)
 
 const navItems = [
   { id: 'home', label: 'Home' },
@@ -49,6 +51,8 @@ const heroNotices = [
 
 const skeletonMetricCount = [1, 2, 3, 4]
 const skeletonCardCount = [1, 2, 3, 4, 5, 6]
+
+const VIEW_PREFS_KEY = 'usagi.viewPrefs'
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English',
@@ -96,6 +100,14 @@ watch([query, status, language, contentType, nsfw, sort, perPage], () => {
 
 watch(drawerOpen, (open) => {
   document.body.style.overflow = open ? 'hidden' : ''
+})
+
+watch([view, perPage], () => {
+  persistViewPrefs()
+})
+
+watch([query, status, language, contentType, nsfw, sort, view, page, perPage], () => {
+  syncUrlState()
 })
 
 function formatContentType(value?: string) {
@@ -214,7 +226,10 @@ function handleScroll() {
   if (scrollFrame) return
 
   scrollFrame = window.requestAnimationFrame(() => {
-    parallaxY.value = Math.min(window.scrollY, 180)
+    const y = window.scrollY
+    parallaxY.value = Math.min(y, 180)
+    isScrolled.value = y > 24
+    showBackToTop.value = y > 420
     updateActiveNav()
     scrollFrame = undefined
   })
@@ -245,6 +260,102 @@ function scrollToSection(id: string) {
   })
 
   activeNav.value = id
+}
+
+function persistViewPrefs() {
+  try {
+    localStorage.setItem(
+      VIEW_PREFS_KEY,
+      JSON.stringify({
+        view: view.value,
+        perPage: perPage.value,
+      }),
+    )
+  } catch {}
+}
+
+function hydrateViewPrefs() {
+  try {
+    const raw = localStorage.getItem(VIEW_PREFS_KEY)
+    if (!raw) return
+    const parsed = JSON.parse(raw) as { view?: 'grid' | 'list'; perPage?: number }
+
+    if (parsed.view === 'grid' || parsed.view === 'list') {
+      view.value = parsed.view
+    }
+
+    if (typeof parsed.perPage === 'number' && perPageOptions.includes(parsed.perPage)) {
+      perPage.value = parsed.perPage
+    }
+  } catch {}
+}
+
+function syncUrlState() {
+  const params = new URLSearchParams()
+
+  if (query.value) params.set('q', query.value)
+  if (status.value !== 'all') params.set('status', status.value)
+  if (language.value !== 'all') params.set('lang', language.value)
+  if (contentType.value !== 'all') params.set('type', contentType.value)
+  if (nsfw.value !== 'all') params.set('nsfw', nsfw.value)
+  if (sort.value !== 'status') params.set('sort', sort.value)
+  if (view.value !== 'grid') params.set('view', view.value)
+  if (page.value !== 1) params.set('page', String(page.value))
+  if (perPage.value !== 50) params.set('perPage', String(perPage.value))
+
+  const search = params.toString()
+  const nextUrl = `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`
+  window.history.replaceState(null, '', nextUrl)
+}
+
+function hydrateUrlState() {
+  const params = new URLSearchParams(window.location.search)
+
+  const q = params.get('q')
+  if (q) {
+    rawQuery.value = q
+    query.value = q.trim().toLowerCase()
+  }
+
+  const nextStatus = params.get('status')
+  if (nextStatus === 'working' || nextStatus === 'blocked') {
+    status.value = nextStatus
+  }
+
+  const nextLanguage = params.get('lang')
+  if (nextLanguage) {
+    language.value = nextLanguage
+  }
+
+  const nextType = params.get('type')
+  if (nextType) {
+    contentType.value = nextType
+  }
+
+  const nextNsfw = params.get('nsfw')
+  if (nextNsfw === 'safe' || nextNsfw === 'nsfw') {
+    nsfw.value = nextNsfw
+  }
+
+  const nextSort = params.get('sort')
+  if (nextSort === 'title' || nextSort === 'language' || nextSort === 'status' || nextSort === 'domains') {
+    sort.value = nextSort
+  }
+
+  const nextView = params.get('view')
+  if (nextView === 'grid' || nextView === 'list') {
+    view.value = nextView
+  }
+
+  const nextPage = Number(params.get('page'))
+  if (Number.isFinite(nextPage) && nextPage > 0) {
+    page.value = Math.floor(nextPage)
+  }
+
+  const nextPerPage = Number(params.get('perPage'))
+  if (perPageOptions.includes(nextPerPage)) {
+    perPage.value = nextPerPage
+  }
 }
 
 const parallaxStyle = computed(() => ({
@@ -293,6 +404,18 @@ const contentTypeOptions = computed(() => {
   return [{ value: 'all', label: 'All content types' }, ...items]
 })
 
+const nsfwOptions = computed(() => {
+  const total = dataset.value.summary.total || dataset.value.sources.length
+  const nsfwCount = dataset.value.summary.nsfw ?? dataset.value.sources.filter((source) => source.nsfw).length
+  const safeCount = Math.max(total - nsfwCount, 0)
+
+  return [
+    { value: 'all', label: `All entries (${formatNumber(total)})` },
+    { value: 'safe', label: `Safe only (${formatNumber(safeCount)})` },
+    { value: 'nsfw', label: `NSFW only (${formatNumber(nsfwCount)})` },
+  ]
+})
+
 const filteredSources = computed<SourceItem[]>(() => {
   const filtered = dataset.value.sources.filter((source) => {
     const sourceStatus = source.health.status
@@ -337,6 +460,26 @@ const paginatedSources = computed<SourceItem[]>(() => {
 const canGoPrev = computed(() => page.value > 1)
 const canGoNext = computed(() => page.value < totalPages.value)
 
+const updatedRelative = computed(() => {
+  const value = dataset.value.generatedAt
+  if (!value) return ''
+
+  const timestamp = new Date(value).getTime()
+  if (Number.isNaN(timestamp)) return ''
+
+  const diffMinutes = Math.round((timestamp - Date.now()) / 60000)
+  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
+
+  const abs = Math.abs(diffMinutes)
+  if (abs < 60) return rtf.format(diffMinutes, 'minute')
+
+  const diffHours = Math.round(diffMinutes / 60)
+  if (Math.abs(diffHours) < 24) return rtf.format(diffHours, 'hour')
+
+  const diffDays = Math.round(diffHours / 24)
+  return rtf.format(diffDays, 'day')
+})
+
 watch(totalPages, (nextTotal) => {
   if (page.value > nextTotal) {
     page.value = nextTotal
@@ -377,6 +520,9 @@ function goToPage(next: number) {
 }
 
 onMounted(async () => {
+  hydrateViewPrefs()
+  hydrateUrlState()
+
   window.addEventListener('scroll', handleScroll, { passive: true })
   window.addEventListener('keydown', handleKeydown)
   handleScroll()
@@ -397,6 +543,8 @@ onMounted(async () => {
     error.value = reason instanceof Error ? reason.message : 'Unknown data loading error'
   } finally {
     loading.value = false
+    updateActiveNav()
+    syncUrlState()
   }
 })
 
@@ -415,9 +563,11 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="shell">
+    <a class="skip-link" href="#catalog">Skip to catalog</a>
+
     <div id="home" class="page-anchor"></div>
 
-    <header class="topbar">
+    <header :class="['topbar', { 'topbar--scrolled': isScrolled }]">
       <div class="topbar__brand">
         <span class="topbar__brand-mark" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none">
@@ -440,6 +590,7 @@ onBeforeUnmount(() => {
           :key="item.id"
           type="button"
           :class="['topbar__nav-button', { 'is-active': activeNav === item.id }]"
+          :aria-current="activeNav === item.id ? 'location' : undefined"
           @click="scrollToSection(item.id)"
         >
           {{ item.label }}
@@ -493,6 +644,7 @@ onBeforeUnmount(() => {
               :key="item.id"
               type="button"
               :class="['drawer__nav-button', { 'is-active': activeNav === item.id }]"
+              :aria-current="activeNav === item.id ? 'location' : undefined"
               @click="scrollToSection(item.id)"
             >
               {{ item.label }}
@@ -519,6 +671,10 @@ onBeforeUnmount(() => {
         <p class="hero__text">
           Browse parser entries, domains, languages, and health state without reader logic,
           proxying, or hosted source content.
+        </p>
+
+        <p class="hero__meta">
+          Last updated: {{ formatDate(dataset.generatedAt) }}<span v-if="updatedRelative"> · {{ updatedRelative }}</span>
         </p>
 
         <div class="hero__actions">
@@ -642,6 +798,7 @@ onBeforeUnmount(() => {
             <input
               v-model="rawQuery"
               type="search"
+              inputmode="search"
               placeholder="Title, language, domain, path, reason…"
               enterkeyhint="search"
               autocomplete="off"
@@ -683,9 +840,9 @@ onBeforeUnmount(() => {
           <label class="field">
             <span>Content safety</span>
             <select v-model="nsfw">
-              <option value="all">All entries</option>
-              <option value="safe">Safe only</option>
-              <option value="nsfw">NSFW only</option>
+              <option v-for="option in nsfwOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
             </select>
           </label>
 
@@ -698,6 +855,14 @@ onBeforeUnmount(() => {
               <option value="domains">Domain count</option>
             </select>
           </label>
+        </div>
+
+        <div class="sidebar__section sidebar__warning">
+          <strong>Third-party websites</strong>
+          <p>
+            Website buttons open external domains run by other parties. Availability, redirects, ads,
+            and content are outside your control.
+          </p>
         </div>
 
         <div class="sidebar__section sidebar__warning">
@@ -725,6 +890,7 @@ onBeforeUnmount(() => {
             <div class="segmented">
               <button
                 :class="['segmented__item', { 'is-active': view === 'grid' }]"
+                aria-label="Grid view"
                 @click="setView('grid')"
               >
                 Grid
@@ -732,6 +898,7 @@ onBeforeUnmount(() => {
 
               <button
                 :class="['segmented__item', { 'is-active': view === 'list' }]"
+                aria-label="List view"
                 @click="setView('list')"
               >
                 List
@@ -747,7 +914,7 @@ onBeforeUnmount(() => {
               </select>
             </label>
 
-            <p class="controls__count">
+            <p class="controls__count" aria-live="polite">
               Showing {{ formatNumber(paginatedSources.length) }} of
               {{ formatNumber(filteredSources.length) }} source<span v-if="filteredSources.length !== 1">s</span>
             </p>
@@ -757,6 +924,7 @@ onBeforeUnmount(() => {
             <button
               class="button button--ghost button--small"
               :disabled="!canGoPrev"
+              aria-label="Previous page"
               @click="goToPage(page - 1)"
             >
               Prev
@@ -769,6 +937,7 @@ onBeforeUnmount(() => {
             <button
               class="button button--ghost button--small"
               :disabled="!canGoNext"
+              aria-label="Next page"
               @click="goToPage(page + 1)"
             >
               Next
@@ -823,5 +992,15 @@ onBeforeUnmount(() => {
         </section>
       </main>
     </div>
+
+    <button
+      v-show="showBackToTop"
+      class="back-to-top"
+      type="button"
+      aria-label="Back to top"
+      @click="scrollToSection('home')"
+    >
+      ↑
+    </button>
   </div>
 </template>
