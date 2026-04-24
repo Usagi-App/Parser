@@ -53,8 +53,8 @@ const topbarDockTop = ref(0);
 const animatedOverviewPercents = ref<number[]>([0, 0, 0]);
 const uiReady = ref(false);
 
-const VIEW_PREFS_KEY = "usagi.viewPrefs";
-const THEME_KEY = "usagi.theme";
+const VIEW_PREFS_KEY = "parser.viewPrefs";
+const THEME_KEY = "parser.theme";
 
 const navItems = [
   { id: "home", label: "Home" },
