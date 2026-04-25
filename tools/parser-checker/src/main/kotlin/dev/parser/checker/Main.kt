@@ -43,6 +43,7 @@ import java.util.Collections
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.system.measureTimeMillis
 
 private const val STATUS_WORKING = "working"
@@ -820,19 +821,51 @@ fun main(args: Array<String>) = runBlocking {
     val semaphore = Semaphore(workers)
     val healthByKey = ConcurrentHashMap<String, SourceHealth>()
 
-    keys.mapIndexed { index, key ->
+    val completedChecks = AtomicInteger(0)
+    val nextProgressMilestone = AtomicInteger(1)
+
+    fun reportProgressIfNeeded() {
+        val done = completedChecks.get()
+        val total = keys.size
+
+        while (true) {
+            val next = nextProgressMilestone.get()
+
+            if (done < next) {
+                return
+            }
+
+            val following = when {
+                next == 1 -> 25
+                next + 25 >= total -> total
+                else -> next + 25
+            }
+
+            if (nextProgressMilestone.compareAndSet(next, following)) {
+                progress("Parser runtime checks: $next/$total")
+
+                if (next == total) {
+                    return
+                }
+            }
+        }
+    }
+
+    keys.map { key ->
         async(Dispatchers.IO) {
             semaphore.withPermit {
                 val health = checker.check(key)
                 healthByKey[key] = health
 
-                val done = index + 1
-                if (done == 1 || done % 25 == 0 || done == keys.size) {
-                    progress("Parser runtime checks: $done/${keys.size}")
-                }
+                completedChecks.incrementAndGet()
+                reportProgressIfNeeded()
             }
         }
     }.awaitAll()
+
+    if (completedChecks.get() >= keys.size && nextProgressMilestone.get() != keys.size) {
+        progress("Parser runtime checks: ${keys.size}/${keys.size}")
+    }       
 
     val healthJson = JSONObject()
 
@@ -866,7 +899,11 @@ fun envLong(name: String, default: Long): Long {
     return System.getenv(name)?.toLongOrNull() ?: default
 }
 
+private val progressLock = Any()
+
 fun progress(message: String) {
-    println(message)
-    System.out.flush()
+    synchronized(progressLock) {
+        println(message)
+        System.out.flush()
+    }
 }
