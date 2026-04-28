@@ -1,5 +1,3 @@
-import type { SourceStatus } from "@/types";
-
 export function formatNumber(value: number): string {
   return new Intl.NumberFormat().format(value);
 }
@@ -17,23 +15,4 @@ export function formatDate(value: string | null): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
-}
-
-export function titleCaseStatus(status: SourceStatus): string {
-  switch (status) {
-    case "working":
-      return "Working";
-    case "broken":
-      return "Broken";
-    case "blocked":
-      return "Blocked";
-    case "unknown":
-    default:
-      return "Unknown";
-  }
-}
-
-export function toLatencyLabel(value: number | null): string {
-  if (value === null) return "—";
-  return `${Math.round(value)} ms`;
 }
